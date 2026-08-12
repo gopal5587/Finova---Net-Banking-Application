@@ -4,6 +4,9 @@ import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.UUID;
 
+import org.hibernate.envers.Audited;
+import org.hibernate.envers.RelationTargetAuditMode;
+
 import com.finova.common.crypto.EncryptedStringConverter;
 import com.finova.user.User;
 
@@ -37,6 +40,7 @@ import lombok.Setter;
  */
 @Entity
 @Table(name = "accounts")
+@Audited
 @Getter
 @Setter
 @NoArgsConstructor
@@ -49,6 +53,8 @@ public class Account {
     @Column(name = "public_id", nullable = false, updatable = false)
     private UUID publicId;
 
+    // Owner (User) is not itself an audited entity; store only the FK id in the audit history.
+    @Audited(targetAuditMode = RelationTargetAuditMode.NOT_AUDITED)
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "owner_id", nullable = false, updatable = false)
     private User owner;

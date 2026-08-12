@@ -4,6 +4,9 @@ import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.UUID;
 
+import org.hibernate.envers.Audited;
+import org.hibernate.envers.RelationTargetAuditMode;
+
 import com.finova.account.Account;
 
 import jakarta.persistence.Column;
@@ -30,6 +33,7 @@ import lombok.Setter;
  */
 @Entity
 @Table(name = "transactions")
+@Audited
 @Getter
 @Setter
 @NoArgsConstructor
