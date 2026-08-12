@@ -3,7 +3,10 @@ package com.finova.user;
 import java.time.Instant;
 import java.util.UUID;
 
+import com.finova.common.crypto.EncryptedStringConverter;
+
 import jakarta.persistence.Column;
+import jakarta.persistence.Convert;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
@@ -61,7 +64,9 @@ public class User {
     @Column(name = "mfa_enabled", nullable = false)
     private boolean mfaEnabled = false;
 
-    @Column(name = "mfa_secret")
+    /** TOTP shared secret; encrypted at rest so a DB dump cannot seed authenticator apps. */
+    @Convert(converter = EncryptedStringConverter.class)
+    @Column(name = "mfa_secret", length = 512)
     private String mfaSecret;
 
     @Column(name = "created_at", nullable = false, updatable = false)

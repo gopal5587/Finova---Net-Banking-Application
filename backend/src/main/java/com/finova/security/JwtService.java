@@ -35,10 +35,12 @@ public class JwtService {
     private static final String CLAIM_ROLE = "role";
     private static final String TYPE_ACCESS = "access";
     private static final String TYPE_REFRESH = "refresh";
+    private static final String TYPE_MFA = "mfa";
 
     private final SecretKey signingKey;
     private final Duration accessTtl;
     private final Duration refreshTtl;
+    private final Duration mfaTtl = Duration.ofMinutes(5);
 
     public JwtService(JwtProperties props) {
         // Fail fast on a weak/misconfigured key rather than silently issuing forgeable tokens.
@@ -73,6 +75,11 @@ public class JwtService {
         return build(subject, TYPE_REFRESH, Map.of(), refreshTtl);
     }
 
+    /** Short-lived pre-auth token proving password was correct; must be exchanged with a TOTP code. */
+    public String generateMfaToken(String subject) {
+        return build(subject, TYPE_MFA, Map.of(), mfaTtl);
+    }
+
     private String build(String subject, String type, Map<String, ?> extraClaims, Duration ttl) {
         Instant now = Instant.now();
         var builder = Jwts.builder()
@@ -99,6 +106,10 @@ public class JwtService {
 
     public boolean isRefreshToken(Claims claims) {
         return TYPE_REFRESH.equals(claims.get(CLAIM_TYPE, String.class));
+    }
+
+    public boolean isMfaToken(Claims claims) {
+        return TYPE_MFA.equals(claims.get(CLAIM_TYPE, String.class));
     }
 
     public String extractRole(Claims claims) {
