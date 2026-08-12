@@ -1,21 +1,21 @@
 package com.finova.audit;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
- * Persists audit events. Uses {@link Propagation#REQUIRES_NEW} so a failed business
- * transaction cannot roll back the audit row that records that failure.
+ * Persists audit records. Writes run in a {@code REQUIRES_NEW} transaction so an audit entry is
+ * committed independently of the business operation - crucially, a FAILURE audit still survives
+ * even when the failing business transaction rolls back.
  */
 @Service
 public class AuditService {
 
-    private static final Logger log = LoggerFactory.getLogger(AuditService.class);
+    public static final String OUTCOME_SUCCESS = "SUCCESS";
+    public static final String OUTCOME_FAILURE = "FAILURE";
+
+    private static final int MAX_DETAIL_LENGTH = 1000;
 
     private final AuditLogRepository auditLogRepository;
 
@@ -24,35 +24,24 @@ public class AuditService {
     }
 
     @Transactional(propagation = Propagation.REQUIRES_NEW)
-    public AuditLog record(String actor,
-                           String action,
-                           String resourceType,
-                           String resourceId,
-                           AuditOutcome outcome,
-                           String details,
-                           String ipAddress) {
+    public void record(String username, String action, String targetType, String outcome, String detail) {
         AuditLog entry = new AuditLog();
-        entry.setActor(actor);
+        entry.setUsername(username);
         entry.setAction(action);
-        entry.setResourceType(resourceType);
-        entry.setResourceId(resourceId);
+        entry.setTargetType(emptyToNull(targetType));
         entry.setOutcome(outcome);
-        entry.setDetails(details);
-        entry.setIpAddress(ipAddress);
-
-        AuditLog saved = auditLogRepository.save(entry);
-        log.info("audit action={} actor={} outcome={} resource={}:{}",
-                action, actor, outcome, resourceType, resourceId);
-        return saved;
+        entry.setDetail(truncate(detail));
+        auditLogRepository.save(entry);
     }
 
-    @Transactional(readOnly = true)
-    public Page<AuditLog> listAll(Pageable pageable) {
-        return auditLogRepository.findAllByOrderByCreatedAtDesc(pageable);
+    private String truncate(String detail) {
+        if (detail == null) {
+            return null;
+        }
+        return detail.length() <= MAX_DETAIL_LENGTH ? detail : detail.substring(0, MAX_DETAIL_LENGTH);
     }
 
-    @Transactional(readOnly = true)
-    public Page<AuditLog> listForActor(String actor, Pageable pageable) {
-        return auditLogRepository.findByActorOrderByCreatedAtDesc(actor, pageable);
+    private String emptyToNull(String value) {
+        return (value == null || value.isBlank()) ? null : value;
     }
 }
