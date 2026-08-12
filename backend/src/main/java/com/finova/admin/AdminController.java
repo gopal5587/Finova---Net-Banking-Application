@@ -11,10 +11,12 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.finova.admin.dto.AdminAccountView;
 import com.finova.admin.dto.AuditLogView;
+import com.finova.admin.dto.FraudFlagView;
 
 /**
  * Admin oversight API. Access is enforced both by the URL rule in SecurityConfig and by
@@ -39,6 +41,17 @@ public class AdminController {
     @GetMapping("/audit-logs")
     public ResponseEntity<Page<AuditLogView>> auditLogs(@PageableDefault(size = 20) Pageable pageable) {
         return ResponseEntity.ok(adminService.listAuditLogs(pageable));
+    }
+
+    @GetMapping("/fraud-flags")
+    public ResponseEntity<Page<FraudFlagView>> fraudFlags(@RequestParam(required = false) Boolean resolved,
+                                                          @PageableDefault(size = 20) Pageable pageable) {
+        return ResponseEntity.ok(adminService.listFraudFlags(resolved, pageable));
+    }
+
+    @PostMapping("/fraud-flags/{flagId}/resolve")
+    public ResponseEntity<FraudFlagView> resolveFraudFlag(@PathVariable UUID flagId) {
+        return ResponseEntity.ok(adminService.resolveFraudFlag(flagId));
     }
 
     @PostMapping("/accounts/{accountId}/freeze")

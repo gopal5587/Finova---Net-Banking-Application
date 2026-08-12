@@ -14,10 +14,13 @@ import com.finova.account.AccountRepository;
 import com.finova.account.AccountStatus;
 import com.finova.admin.dto.AdminAccountView;
 import com.finova.admin.dto.AuditLogView;
+import com.finova.admin.dto.FraudFlagView;
 import com.finova.audit.AuditLogRepository;
 import com.finova.audit.Auditable;
 import com.finova.common.exception.BusinessRuleException;
 import com.finova.common.exception.ResourceNotFoundException;
+import com.finova.fraud.FraudFlag;
+import com.finova.fraud.FraudFlagRepository;
 
 /**
  * Administrative oversight operations. All reads are paginated to stay safe on large datasets, and
@@ -30,10 +33,14 @@ public class AdminService {
 
     private final AccountRepository accountRepository;
     private final AuditLogRepository auditLogRepository;
+    private final FraudFlagRepository fraudFlagRepository;
 
-    public AdminService(AccountRepository accountRepository, AuditLogRepository auditLogRepository) {
+    public AdminService(AccountRepository accountRepository,
+                        AuditLogRepository auditLogRepository,
+                        FraudFlagRepository fraudFlagRepository) {
         this.accountRepository = accountRepository;
         this.auditLogRepository = auditLogRepository;
+        this.fraudFlagRepository = fraudFlagRepository;
     }
 
     @Transactional(readOnly = true)
@@ -44,6 +51,24 @@ public class AdminService {
     @Transactional(readOnly = true)
     public Page<AuditLogView> listAuditLogs(Pageable pageable) {
         return auditLogRepository.findAllByOrderByEventTimeDesc(pageable).map(AuditLogView::from);
+    }
+
+    @Transactional(readOnly = true)
+    public Page<FraudFlagView> listFraudFlags(Boolean resolved, Pageable pageable) {
+        Page<FraudFlag> flags = (resolved == null)
+                ? fraudFlagRepository.findAllByOrderByCreatedAtDesc(pageable)
+                : fraudFlagRepository.findByResolvedOrderByCreatedAtDesc(resolved, pageable);
+        return flags.map(FraudFlagView::from);
+    }
+
+    @Auditable(action = "ADMIN_RESOLVE_FRAUD_FLAG", targetType = "FraudFlag")
+    @Transactional
+    public FraudFlagView resolveFraudFlag(UUID flagId) {
+        FraudFlag flag = fraudFlagRepository.findByPublicId(flagId)
+                .orElseThrow(() -> new ResourceNotFoundException("Fraud flag not found"));
+        flag.setResolved(true);
+        log.info("Admin resolved fraud flag {}", flagId);
+        return FraudFlagView.from(flag);
     }
 
     @Auditable(action = "ADMIN_FREEZE_ACCOUNT", targetType = "Account")
