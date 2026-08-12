@@ -1,0 +1,79 @@
+# Finova local/dev stack: application + PostgreSQL + Redis + Prometheus + Grafana.
+# Run: docker compose up --build
+# The 'sandbox' Spring profile is active by default, so no external API keys are needed.
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: finova-postgres
+    environment:
+      POSTGRES_DB: finova
+      POSTGRES_USER: finova
+      POSTGRES_PASSWORD: finova
+    ports:
+      # Host port 5433 avoids clashing with a native PostgreSQL on 5432.
+      - "5433:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U finova -d finova"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: finova-redis
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  app:
+    build:
+      context: ./backend
+    container_name: finova-app
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      SPRING_PROFILES_ACTIVE: sandbox
+      DB_URL: jdbc:postgresql://postgres:5432/finova
+      DB_USERNAME: finova
+      DB_PASSWORD: finova
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+    ports:
+      - "8080:8080"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8080/actuator/health || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: finova-prometheus
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    ports:
+      - "9090:9090"
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: finova-grafana
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: admin
+    ports:
+      - "3000:3000"
+    depends_on:
+      - prometheus
+
+volumes:
+  postgres_data:

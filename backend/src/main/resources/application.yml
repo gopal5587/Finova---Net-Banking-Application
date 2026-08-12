@@ -1,0 +1,74 @@
+spring:
+  application:
+    name: finova-banking
+  profiles:
+    # 'sandbox' simulates all external integrations (Stripe, currency, weather, maps, ledger)
+    # so the app runs fully without real API keys. Override with SPRING_PROFILES_ACTIVE.
+    active: ${SPRING_PROFILES_ACTIVE:sandbox}
+
+  datasource:
+    # Local default uses host port 5433 (see docker-compose) to avoid clashing with a
+    # native PostgreSQL on 5432. Inside Docker this is overridden to postgres:5432.
+    url: ${DB_URL:jdbc:postgresql://localhost:5433/finova}
+    username: ${DB_USERNAME:finova}
+    password: ${DB_PASSWORD:finova}
+    hikari:
+      # Conservative pool sizing; tune per load-test results.
+      maximum-pool-size: ${DB_POOL_MAX:10}
+      minimum-idle: 2
+      connection-timeout: 30000
+
+  jpa:
+    open-in-view: false
+    hibernate:
+      # Schema is owned by Flyway migrations, never by Hibernate auto-DDL.
+      ddl-auto: validate
+    properties:
+      hibernate:
+        jdbc:
+          time_zone: UTC
+        format_sql: false
+
+  flyway:
+    enabled: true
+    baseline-on-migrate: true
+
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+      timeout: 2000ms
+
+# Application-specific configuration (validated at startup via typed @ConfigurationProperties later).
+finova:
+  security:
+    jwt:
+      # Dev-only default secret. MUST be overridden in production via env var.
+      secret: ${JWT_SECRET:Zmlub3ZhLWRldi1zZWNyZXQtY2hhbmdlLW1lLWluLXByb2R1Y3Rpb24tMTIzNDU2Nzg5MA==}
+      access-token-ttl-minutes: ${JWT_ACCESS_TTL:15}
+      refresh-token-ttl-days: ${JWT_REFRESH_TTL:7}
+  currency:
+    base: INR
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus,metrics
+  endpoint:
+    health:
+      show-details: when_authorized
+  metrics:
+    tags:
+      application: finova-banking
+
+server:
+  port: ${SERVER_PORT:8080}
+  error:
+    include-message: always
+    include-binding-errors: always
+
+logging:
+  level:
+    root: INFO
+    com.finova: DEBUG
