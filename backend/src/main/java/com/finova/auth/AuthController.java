@@ -12,6 +12,10 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.finova.auth.dto.LoginRequest;
+import com.finova.auth.dto.LoginResponse;
+import com.finova.auth.dto.MfaCodeRequest;
+import com.finova.auth.dto.MfaSetupResponse;
+import com.finova.auth.dto.MfaVerifyRequest;
 import com.finova.auth.dto.RefreshRequest;
 import com.finova.auth.dto.RegisterRequest;
 import com.finova.auth.dto.TokenResponse;
@@ -19,10 +23,6 @@ import com.finova.auth.dto.UserProfileResponse;
 import com.finova.common.exception.ResourceNotFoundException;
 import com.finova.user.UserRepository;
 
-/**
- * Public authentication endpoints plus a protected {@code /me} for the current user.
- * Business logic lives in {@link AuthService}; the controller only handles HTTP concerns.
- */
 @RestController
 @RequestMapping("/api/v1/auth")
 public class AuthController {
@@ -37,13 +37,34 @@ public class AuthController {
 
     @PostMapping("/register")
     public ResponseEntity<UserProfileResponse> register(@Valid @RequestBody RegisterRequest request) {
-        UserProfileResponse profile = authService.register(request);
-        return ResponseEntity.status(HttpStatus.CREATED).body(profile);
+        return ResponseEntity.status(HttpStatus.CREATED).body(authService.register(request));
     }
 
     @PostMapping("/login")
-    public ResponseEntity<TokenResponse> login(@Valid @RequestBody LoginRequest request) {
+    public ResponseEntity<LoginResponse> login(@Valid @RequestBody LoginRequest request) {
         return ResponseEntity.ok(authService.login(request));
+    }
+
+    @PostMapping("/mfa/verify")
+    public ResponseEntity<TokenResponse> verifyMfa(@Valid @RequestBody MfaVerifyRequest request) {
+        return ResponseEntity.ok(authService.verifyMfa(request));
+    }
+
+    @PostMapping("/mfa/setup")
+    public ResponseEntity<MfaSetupResponse> setupMfa(Authentication auth) {
+        return ResponseEntity.ok(authService.beginMfaSetup(auth.getName()));
+    }
+
+    @PostMapping("/mfa/enable")
+    public ResponseEntity<UserProfileResponse> enableMfa(Authentication auth,
+                                                         @Valid @RequestBody MfaCodeRequest request) {
+        return ResponseEntity.ok(authService.enableMfa(auth.getName(), request));
+    }
+
+    @PostMapping("/mfa/disable")
+    public ResponseEntity<UserProfileResponse> disableMfa(Authentication auth,
+                                                          @Valid @RequestBody MfaCodeRequest request) {
+        return ResponseEntity.ok(authService.disableMfa(auth.getName(), request));
     }
 
     @PostMapping("/refresh")
@@ -51,7 +72,6 @@ public class AuthController {
         return ResponseEntity.ok(authService.refresh(request));
     }
 
-    /** Returns the authenticated caller's profile; the username comes from the validated JWT. */
     @GetMapping("/me")
     public ResponseEntity<UserProfileResponse> me(Authentication authentication) {
         String username = authentication.getName();
