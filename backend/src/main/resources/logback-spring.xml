@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Logging configuration for Finova.
+
+  Two appenders:
+    * CONSOLE  - human-readable, includes the correlation id and user (from MDC) so a developer can
+                 follow one request across log lines.
+    * JSON     - structured, one JSON object per line written to logs/finova.json, suitable for
+                 shipping to log aggregators (ELK/Loki) for compliance search and alerting.
+
+  MDC fields (correlationId, user) are populated by CorrelationIdFilter and JwtAuthenticationFilter.
+-->
+<configuration>
+
+    <property name="LOG_DIR" value="${LOG_DIR:-logs}"/>
+
+    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} %-5level [cid=%X{correlationId:-none} user=%X{user:-anonymous}] %logger{36} - %msg%n</pattern>
+        </encoder>
+    </appender>
+
+    <appender name="JSON" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>${LOG_DIR}/finova.json</file>
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <fileNamePattern>${LOG_DIR}/finova-%d{yyyy-MM-dd}.json</fileNamePattern>
+            <maxHistory>14</maxHistory>
+        </rollingPolicy>
+        <encoder class="net.logstash.logback.encoder.LogstashEncoder">
+            <!-- Promote MDC entries (correlationId, user) to top-level JSON fields. -->
+            <includeMdcKeyName>correlationId</includeMdcKeyName>
+            <includeMdcKeyName>user</includeMdcKeyName>
+            <customFields>{"application":"finova-banking"}</customFields>
+        </encoder>
+    </appender>
+
+    <root level="INFO">
+        <appender-ref ref="CONSOLE"/>
+        <appender-ref ref="JSON"/>
+    </root>
+
+    <logger name="com.finova" level="DEBUG"/>
+
+</configuration>

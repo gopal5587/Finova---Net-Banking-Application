@@ -10,6 +10,7 @@ import jakarta.servlet.http.HttpServletResponse;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.slf4j.MDC;
 import org.springframework.lang.NonNull;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -36,6 +37,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private static final Logger log = LoggerFactory.getLogger(JwtAuthenticationFilter.class);
     private static final String HEADER = "Authorization";
     private static final String PREFIX = "Bearer ";
+    private static final String MDC_USER = "user";
 
     private final JwtService jwtService;
 
@@ -52,7 +54,21 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         if (token != null && SecurityContextHolder.getContext().getAuthentication() == null) {
             authenticate(token, request);
         }
-        filterChain.doFilter(request, response);
+        // Attribute subsequent log lines to the authenticated user, if any. Cleared in finally so the
+        // value never leaks onto the next request handled by this (pooled) thread.
+        var authentication = SecurityContextHolder.getContext().getAuthentication();
+        boolean userTagged = false;
+        if (authentication != null && authentication.isAuthenticated()) {
+            MDC.put(MDC_USER, authentication.getName());
+            userTagged = true;
+        }
+        try {
+            filterChain.doFilter(request, response);
+        } finally {
+            if (userTagged) {
+                MDC.remove(MDC_USER);
+            }
+        }
     }
 
     private void authenticate(String token, HttpServletRequest request) {
