@@ -1,5 +1,7 @@
 package com.finova.transaction;
 
+import java.time.Instant;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -7,6 +9,9 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 public interface TransactionRepository extends JpaRepository<Transaction, Long> {
+
+    /** Counts recent debits from an account, used by the velocity fraud rule. */
+    long countBySourceAccountIdAndCreatedAtAfter(Long sourceAccountId, Instant after);
 
     /**
      * Statement view for a single account: every entry where the account is either the source or

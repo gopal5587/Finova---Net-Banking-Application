@@ -37,6 +37,7 @@ class TransactionServiceTest {
     @Mock private TransactionRepository transactionRepository;
     @Mock private UserRepository userRepository;
     @Mock private org.springframework.cache.CacheManager cacheManager;
+    @Mock private com.finova.fraud.FraudDetectionService fraudDetectionService;
 
     private final TransactionReferenceGenerator referenceGenerator = new TransactionReferenceGenerator();
 
@@ -49,7 +50,7 @@ class TransactionServiceTest {
     @BeforeEach
     void setUp() {
         service = new TransactionService(accountRepository, transactionRepository, userRepository,
-                referenceGenerator, cacheManager);
+                referenceGenerator, cacheManager, fraudDetectionService);
 
         owner = new User();
         owner.setId(1L);

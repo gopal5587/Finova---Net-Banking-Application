@@ -22,6 +22,7 @@ import com.finova.audit.Auditable;
 import com.finova.common.config.CacheConfig;
 import com.finova.common.exception.BusinessRuleException;
 import com.finova.common.exception.ResourceNotFoundException;
+import com.finova.fraud.FraudDetectionService;
 import com.finova.transaction.dto.MoneyRequest;
 import com.finova.transaction.dto.TransactionResponse;
 import com.finova.transaction.dto.TransferRequest;
@@ -53,17 +54,20 @@ public class TransactionService {
     private final UserRepository userRepository;
     private final TransactionReferenceGenerator referenceGenerator;
     private final CacheManager cacheManager;
+    private final FraudDetectionService fraudDetectionService;
 
     public TransactionService(AccountRepository accountRepository,
                               TransactionRepository transactionRepository,
                               UserRepository userRepository,
                               TransactionReferenceGenerator referenceGenerator,
-                              CacheManager cacheManager) {
+                              CacheManager cacheManager,
+                              FraudDetectionService fraudDetectionService) {
         this.accountRepository = accountRepository;
         this.transactionRepository = transactionRepository;
         this.userRepository = userRepository;
         this.referenceGenerator = referenceGenerator;
         this.cacheManager = cacheManager;
+        this.fraudDetectionService = fraudDetectionService;
     }
 
     @Auditable(action = "TRANSFER", targetType = "Account")
@@ -102,6 +106,9 @@ public class TransactionService {
         evictBalance(from);
         evictBalance(to);
 
+        // Advisory fraud screening on the debited account; raises flags but never blocks the transfer.
+        fraudDetectionService.evaluateDebit(from, tx);
+
         log.info("Transfer {} of {} from {} to {}", tx.getReference(), amount,
                 from.getPublicId(), to.getPublicId());
         return TransactionResponse.from(tx);
@@ -133,6 +140,7 @@ public class TransactionService {
         account.setBalance(account.getBalance().subtract(amount));
         Transaction tx = record(TransactionType.WITHDRAWAL, account, null, amount, request.description());
         evictBalance(account);
+        fraudDetectionService.evaluateDebit(account, tx);
 
         log.info("Withdrawal {} of {} from {}", tx.getReference(), amount, account.getPublicId());
         return TransactionResponse.from(tx);
