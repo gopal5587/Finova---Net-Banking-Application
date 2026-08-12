@@ -37,4 +37,6 @@ public interface AccountRepository extends JpaRepository<Account, Long> {
     Optional<Account> findByPublicIdAndOwnerId(UUID publicId, Long ownerId);
 
     boolean existsByAccountNumber(String accountNumber);
+
+    List<Account> findByAccountTypeAndStatus(AccountType accountType, AccountStatus status);
 }
