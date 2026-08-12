@@ -38,6 +38,7 @@ class TransactionServiceTest {
     @Mock private UserRepository userRepository;
     @Mock private org.springframework.cache.CacheManager cacheManager;
     @Mock private com.finova.fraud.FraudDetectionService fraudDetectionService;
+    @Mock private com.finova.integration.ledger.BlockchainLedgerService blockchainLedgerService;
 
     private final TransactionReferenceGenerator referenceGenerator = new TransactionReferenceGenerator();
 
@@ -50,7 +51,7 @@ class TransactionServiceTest {
     @BeforeEach
     void setUp() {
         service = new TransactionService(accountRepository, transactionRepository, userRepository,
-                referenceGenerator, cacheManager, fraudDetectionService);
+                referenceGenerator, cacheManager, fraudDetectionService, blockchainLedgerService);
 
         owner = new User();
         owner.setId(1L);

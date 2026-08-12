@@ -23,6 +23,7 @@ import com.finova.common.config.CacheConfig;
 import com.finova.common.exception.BusinessRuleException;
 import com.finova.common.exception.ResourceNotFoundException;
 import com.finova.fraud.FraudDetectionService;
+import com.finova.integration.ledger.BlockchainLedgerService;
 import com.finova.transaction.dto.MoneyRequest;
 import com.finova.transaction.dto.TransactionResponse;
 import com.finova.transaction.dto.TransferRequest;
@@ -55,19 +56,22 @@ public class TransactionService {
     private final TransactionReferenceGenerator referenceGenerator;
     private final CacheManager cacheManager;
     private final FraudDetectionService fraudDetectionService;
+    private final BlockchainLedgerService blockchainLedgerService;
 
     public TransactionService(AccountRepository accountRepository,
                               TransactionRepository transactionRepository,
                               UserRepository userRepository,
                               TransactionReferenceGenerator referenceGenerator,
                               CacheManager cacheManager,
-                              FraudDetectionService fraudDetectionService) {
+                              FraudDetectionService fraudDetectionService,
+                              BlockchainLedgerService blockchainLedgerService) {
         this.accountRepository = accountRepository;
         this.transactionRepository = transactionRepository;
         this.userRepository = userRepository;
         this.referenceGenerator = referenceGenerator;
         this.cacheManager = cacheManager;
         this.fraudDetectionService = fraudDetectionService;
+        this.blockchainLedgerService = blockchainLedgerService;
     }
 
     @Auditable(action = "TRANSFER", targetType = "Account")
@@ -168,7 +172,11 @@ public class TransactionService {
         tx.setAmount(amount);
         tx.setCurrency("INR");
         tx.setDescription(description);
-        return transactionRepository.save(tx);
+        Transaction saved = transactionRepository.save(tx);
+        // Conceptual immutable mirror of the ledger entry (sandbox blockchain simulation).
+        blockchainLedgerService.append(saved.getReference(),
+                type.name() + ":" + amount + ":INR");
+        return saved;
     }
 
     private Account lockOwnedAccount(String username, UUID accountId) {
