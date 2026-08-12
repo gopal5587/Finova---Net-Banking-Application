@@ -55,6 +55,13 @@ finova:
     # Time-to-live for cached account balances. Short enough to bound staleness if an
     # out-of-band write ever slips past cache eviction.
     balance-ttl-seconds: ${BALANCE_CACHE_TTL:60}
+  fraud:
+    # Risk thresholds for the (advisory) fraud detection rules.
+    large-amount-threshold: ${FRAUD_LARGE_AMOUNT:100000.00}
+    velocity-window-seconds: ${FRAUD_VELOCITY_WINDOW:60}
+    velocity-max-transfers: ${FRAUD_VELOCITY_MAX:5}
+    odd-hours-start: ${FRAUD_ODD_START:0}
+    odd-hours-end: ${FRAUD_ODD_END:5}
 
 management:
   endpoints:
