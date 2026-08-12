@@ -18,6 +18,7 @@ import org.springframework.transaction.annotation.Transactional;
 import com.finova.account.Account;
 import com.finova.account.AccountRepository;
 import com.finova.account.AccountStatus;
+import com.finova.audit.Auditable;
 import com.finova.common.config.CacheConfig;
 import com.finova.common.exception.BusinessRuleException;
 import com.finova.common.exception.ResourceNotFoundException;
@@ -65,6 +66,7 @@ public class TransactionService {
         this.cacheManager = cacheManager;
     }
 
+    @Auditable(action = "TRANSFER", targetType = "Account")
     @Transactional
     public TransactionResponse transfer(String username, TransferRequest request) {
         if (request.fromAccountId().equals(request.toAccountId())) {
@@ -105,6 +107,7 @@ public class TransactionService {
         return TransactionResponse.from(tx);
     }
 
+    @Auditable(action = "DEPOSIT", targetType = "Account")
     @Transactional
     public TransactionResponse deposit(String username, UUID accountId, MoneyRequest request) {
         BigDecimal amount = normalize(request.amount());
@@ -119,6 +122,7 @@ public class TransactionService {
         return TransactionResponse.from(tx);
     }
 
+    @Auditable(action = "WITHDRAWAL", targetType = "Account")
     @Transactional
     public TransactionResponse withdraw(String username, UUID accountId, MoneyRequest request) {
         BigDecimal amount = normalize(request.amount());

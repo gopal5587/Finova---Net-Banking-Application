@@ -15,6 +15,7 @@ import org.springframework.transaction.annotation.Transactional;
 import com.finova.account.dto.AccountResponse;
 import com.finova.account.dto.BalanceResponse;
 import com.finova.account.dto.CreateAccountRequest;
+import com.finova.audit.Auditable;
 import com.finova.common.config.CacheConfig;
 import com.finova.common.exception.ResourceNotFoundException;
 import com.finova.user.User;
@@ -45,6 +46,7 @@ public class AccountService {
         this.accountNumberGenerator = accountNumberGenerator;
     }
 
+    @Auditable(action = "ACCOUNT_CREATE", targetType = "Account")
     @Transactional
     @CacheEvict(cacheNames = CacheConfig.CACHE_ACCOUNT_BALANCE, key = "#username + ':' + #result.id()")
     public AccountResponse createAccount(String username, CreateAccountRequest request) {
