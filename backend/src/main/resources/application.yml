@@ -72,6 +72,41 @@ finova:
     # Quartz cron: 02:00 and 02:30 UTC on the 1st of each month.
     interest-cron: ${INTEREST_CRON:0 0 2 1 * ?}
     statement-cron: ${STATEMENT_CRON:0 30 2 1 * ?}
+  integrations:
+    # sandbox = simulated third parties (default). live = real HTTP calls where configured.
+    mode: ${INTEGRATIONS_MODE:sandbox}
+    connect-timeout-ms: 2000
+    read-timeout-ms: 3000
+    currency:
+      base-url: ${CURRENCY_API_BASE:https://api.exchangerate.host}
+
+resilience4j:
+  circuitbreaker:
+    instances:
+      currencyApi:
+        slidingWindowSize: 10
+        failureRateThreshold: 50
+        waitDurationInOpenState: 10s
+      paymentGateway:
+        slidingWindowSize: 10
+        failureRateThreshold: 50
+        waitDurationInOpenState: 10s
+      weatherApi:
+        slidingWindowSize: 10
+        failureRateThreshold: 50
+        waitDurationInOpenState: 10s
+      mapsApi:
+        slidingWindowSize: 10
+        failureRateThreshold: 50
+        waitDurationInOpenState: 10s
+  retry:
+    instances:
+      currencyApi:
+        maxAttempts: 3
+        waitDuration: 200ms
+      paymentGateway:
+        maxAttempts: 3
+        waitDuration: 200ms
 
 management:
   endpoints:
