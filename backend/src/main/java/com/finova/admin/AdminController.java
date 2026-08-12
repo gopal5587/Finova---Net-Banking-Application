@@ -1,5 +1,6 @@
 package com.finova.admin;
 
+import java.util.Map;
 import java.util.UUID;
 
 import org.springframework.data.domain.Page;
@@ -17,6 +18,8 @@ import org.springframework.web.bind.annotation.RestController;
 import com.finova.admin.dto.AdminAccountView;
 import com.finova.admin.dto.AuditLogView;
 import com.finova.admin.dto.FraudFlagView;
+import com.finova.scheduling.InterestAccrualService;
+import com.finova.scheduling.StatementGenerationService;
 
 /**
  * Admin oversight API. Access is enforced both by the URL rule in SecurityConfig and by
@@ -28,9 +31,15 @@ import com.finova.admin.dto.FraudFlagView;
 public class AdminController {
 
     private final AdminService adminService;
+    private final InterestAccrualService interestAccrualService;
+    private final StatementGenerationService statementGenerationService;
 
-    public AdminController(AdminService adminService) {
+    public AdminController(AdminService adminService,
+                           InterestAccrualService interestAccrualService,
+                           StatementGenerationService statementGenerationService) {
         this.adminService = adminService;
+        this.interestAccrualService = interestAccrualService;
+        this.statementGenerationService = statementGenerationService;
     }
 
     @GetMapping("/accounts")
@@ -62,5 +71,18 @@ public class AdminController {
     @PostMapping("/accounts/{accountId}/unfreeze")
     public ResponseEntity<AdminAccountView> unfreeze(@PathVariable UUID accountId) {
         return ResponseEntity.ok(adminService.unfreeze(accountId));
+    }
+
+    /** Manual trigger for demos/tests; the same work also runs on the Quartz cron. */
+    @PostMapping("/jobs/interest")
+    public ResponseEntity<Map<String, Object>> runInterestJob() {
+        int credited = interestAccrualService.accrueMonthlyInterest();
+        return ResponseEntity.ok(Map.of("creditedAccounts", credited));
+    }
+
+    @PostMapping("/jobs/statements")
+    public ResponseEntity<Map<String, Object>> runStatementJob() {
+        int created = statementGenerationService.generateForPreviousMonth();
+        return ResponseEntity.ok(Map.of("statementsCreated", created));
     }
 }
