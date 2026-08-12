@@ -39,6 +39,10 @@ spring:
       port: ${REDIS_PORT:6379}
       timeout: 2000ms
 
+  quartz:
+    job-store-type: memory
+    overwrite-existing-jobs: true
+
 # Application-specific configuration (validated at startup via typed @ConfigurationProperties later).
 finova:
   security:
@@ -62,6 +66,12 @@ finova:
     velocity-max-transfers: ${FRAUD_VELOCITY_MAX:5}
     odd-hours-start: ${FRAUD_ODD_START:0}
     odd-hours-end: ${FRAUD_ODD_END:5}
+  scheduling:
+    # 4% annual savings interest, credited monthly as balance × rate / 12.
+    savings-annual-rate: ${SAVINGS_ANNUAL_RATE:0.04}
+    # Quartz cron: 02:00 and 02:30 UTC on the 1st of each month.
+    interest-cron: ${INTEREST_CRON:0 0 2 1 * ?}
+    statement-cron: ${STATEMENT_CRON:0 30 2 1 * ?}
 
 management:
   endpoints:
