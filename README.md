@@ -66,4 +66,5 @@ All configuration is environment-driven. Copy `.env.example` to `.env` to overri
 
 ## Deploy
 
-See [docs/DEPLOY.md](docs/DEPLOY.md) for AWS ECS and GCP Cloud Run notes.
+- **Free split stack (Render + Neon + Upstash + Cloudflare Pages):** [docs/DEPLOY-CLOUD.md](docs/DEPLOY-CLOUD.md)
+- **AWS ECS / GCP Cloud Run:** [docs/DEPLOY.md](docs/DEPLOY.md)

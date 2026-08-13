@@ -1,0 +1,32 @@
+# Render Blueprint — Finova API (free tier)
+# Connect repo in Render → New → Blueprint → point at this file.
+# Set secret env vars in the dashboard after first deploy.
+
+services:
+  - type: web
+    name: finova-api
+    runtime: docker
+    rootDir: backend
+    plan: free
+    healthCheckPath: /actuator/health
+    envVars:
+      - key: SPRING_PROFILES_ACTIVE
+        value: sandbox
+      - key: JAVA_TOOL_OPTIONS
+        value: -XX:MaxRAMPercentage=75.0
+      - key: DB_URL
+        sync: false
+      - key: DB_USERNAME
+        sync: false
+      - key: DB_PASSWORD
+        sync: false
+      - key: REDIS_URL
+        sync: false
+      - key: JWT_SECRET
+        generateValue: true
+      - key: AES_SECRET
+        generateValue: true
+      - key: FINOVA_CORS_ORIGINS
+        sync: false
+      - key: ADMIN_PASSWORD
+        sync: false

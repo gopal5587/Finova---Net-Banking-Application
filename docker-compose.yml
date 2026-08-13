@@ -46,12 +46,11 @@ services:
       DB_URL: jdbc:postgresql://postgres:5432/finova
       DB_USERNAME: finova
       DB_PASSWORD: finova
-      REDIS_HOST: redis
-      REDIS_PORT: 6379
+      REDIS_URL: redis://redis:6379
     ports:
       - "8080:8080"
     healthcheck:
-      test: ["CMD-SHELL", "wget -qO- http://localhost:8080/actuator/health || exit 1"]
+      test: ["CMD-SHELL", "curl -f http://localhost:8080/actuator/health || exit 1"]
       interval: 15s
       timeout: 5s
       retries: 10

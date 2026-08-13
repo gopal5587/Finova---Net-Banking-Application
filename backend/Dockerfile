@@ -16,11 +16,17 @@ RUN mvn -B -q clean package -DskipTests
 FROM eclipse-temurin:21-jre AS runtime
 WORKDIR /app
 
-# Run as a non-root user to reduce container attack surface.
-RUN groupadd --system finova && useradd --system --gid finova finova
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends curl \
+    && rm -rf /var/lib/apt/lists/* \
+    && groupadd --system finova \
+    && useradd --system --gid finova finova \
+    && mkdir -p /app/logs \
+    && chown -R finova:finova /app
+
 USER finova
 
-COPY --from=build /workspace/target/*.jar app.jar
+COPY --chown=finova:finova --from=build /workspace/target/*.jar app.jar
 
 EXPOSE 8080
 # Container-aware JVM flags; heap sizing left to the container memory limit.

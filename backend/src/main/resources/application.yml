@@ -35,8 +35,8 @@ spring:
 
   data:
     redis:
-      host: ${REDIS_HOST:localhost}
-      port: ${REDIS_PORT:6379}
+      # Local: redis://localhost:6379. Upstash: rediss://default:token@host:6379
+      url: ${REDIS_URL:redis://localhost:6379}
       timeout: 2000ms
 
   quartz:
@@ -45,6 +45,9 @@ spring:
 
 # Application-specific configuration (validated at startup via typed @ConfigurationProperties later).
 finova:
+  # Comma-separated browser origins for CORS (Cloudflare Pages URL goes here in production).
+  cors:
+    allowed-origins: ${FINOVA_CORS_ORIGINS:http://localhost:5173,http://127.0.0.1:5173}
   security:
     jwt:
       # Dev-only default secret. MUST be overridden in production via env var.
@@ -121,7 +124,8 @@ management:
       application: finova-banking
 
 server:
-  port: ${SERVER_PORT:8080}
+  # Render sets PORT; SERVER_PORT is kept for local/docker overrides.
+  port: ${PORT:${SERVER_PORT:8080}}
   error:
     include-message: always
     include-binding-errors: always

@@ -1,5 +1,12 @@
 const TOKEN_KEY = 'finova_access_token'
 
+/** Empty in local dev (Vite proxy). Set to Render URL in Cloudflare Pages build env. */
+const API_BASE = (import.meta.env.VITE_API_BASE_URL ?? '').replace(/\/$/, '')
+
+function apiUrl(path: string): string {
+  return `${API_BASE}${path}`
+}
+
 export function getToken(): string | null {
   return localStorage.getItem(TOKEN_KEY)
 }
@@ -28,7 +35,7 @@ export async function api<T>(path: string, options: RequestInit = {}): Promise<T
   const token = getToken()
   if (token) headers.set('Authorization', `Bearer ${token}`)
 
-  const res = await fetch(path, { ...options, headers })
+  const res = await fetch(apiUrl(path), { ...options, headers })
   if (!res.ok) {
     let message = res.statusText
     let details: string[] = []
