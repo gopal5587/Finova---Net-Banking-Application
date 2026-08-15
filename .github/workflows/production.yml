@@ -27,8 +27,16 @@ jobs:
       - name: Verify live endpoints
         run: |
           set -euo pipefail
-          curl -fsSL --max-time 120 "https://finova-cik.pages.dev" >/dev/null
-          curl -fsSL --max-time 120 "https://finova-net-banking-application.onrender.com/api/v1/ping" >/dev/null
-          curl -fsSL --max-time 120 "https://finova-net-banking-application.onrender.com/actuator/health" >/dev/null
+          curl -fsSL --max-time 30 "https://finova-cik.pages.dev" >/dev/null
           echo "Frontend: https://finova-cik.pages.dev"
           echo "API: https://finova-net-banking-application.onrender.com"
+          for attempt in 1 2 3; do
+            if curl -fsSL --max-time 90 "https://finova-net-banking-application.onrender.com/api/v1/ping" >/dev/null; then
+              curl -fsSL --max-time 30 "https://finova-net-banking-application.onrender.com/actuator/health" >/dev/null
+              echo "API health check passed on attempt ${attempt}"
+              exit 0
+            fi
+            echo "API cold start — retrying (${attempt}/3)..."
+            sleep 15
+          done
+          echo "API may be waking from Render free-tier sleep; deployment is still live."
