@@ -1,0 +1,34 @@
+name: Production
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  deployments: write
+
+concurrency:
+  group: production
+  cancel-in-progress: true
+
+jobs:
+  production:
+    name: Live on Cloudflare + Render
+    runs-on: ubuntu-latest
+    environment:
+      name: production
+      url: https://finova-cik.pages.dev
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Verify live endpoints
+        run: |
+          set -euo pipefail
+          curl -fsSL --max-time 120 "https://finova-cik.pages.dev" >/dev/null
+          curl -fsSL --max-time 120 "https://finova-net-banking-application.onrender.com/api/v1/ping" >/dev/null
+          curl -fsSL --max-time 120 "https://finova-net-banking-application.onrender.com/actuator/health" >/dev/null
+          echo "Frontend: https://finova-cik.pages.dev"
+          echo "API: https://finova-net-banking-application.onrender.com"

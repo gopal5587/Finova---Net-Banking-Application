@@ -1,0 +1,33 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    name: Publish GitHub Release
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Create release
+        uses: softprops/action-gh-release@v2
+        with:
+          generate_release_notes: true
+          body: |
+            ## Live deployment
+
+            | Service | URL |
+            | --- | --- |
+            | Web application | https://finova-cik.pages.dev |
+            | REST API | https://finova-net-banking-application.onrender.com |
+            | API health | https://finova-net-banking-application.onrender.com/actuator/health |
+            | Swagger UI | https://finova-net-banking-application.onrender.com/swagger-ui.html |
+
+            Deployed on **Cloudflare Pages** (frontend) and **Render** (API) with **Neon** Postgres and **Upstash** Redis.
